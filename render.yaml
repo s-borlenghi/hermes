@@ -13,7 +13,7 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: CORS_ORIGINS
-        value: '["https://YOUR_GITHUB_USERNAME.github.io"]'
+        value: '["https://s-borlenghi.github.io"]'
       - key: DEMO_USER_EMAIL
         value: demo@hermes.dev
       - key: DEMO_USER_PASSWORD

@@ -9,9 +9,9 @@ env/
 *.db
 *.db-journal
 
-.env
-.env.*
-!.env.example
+backend/.env
+frontend/.env.local
+frontend/.env.*.local
 
 .pytest_cache/
 .ruff_cache/

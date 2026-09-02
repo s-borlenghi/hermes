@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hermes — Job Application Tracker API</title>
+  <meta name="description" content="A FastAPI + SQLite backend for tracking job applications, interviews, and offers — with JWT auth, Alembic migrations, pytest coverage, and a live deployed demo." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow"><span class="dot"></span> Portfolio project · live API</div>
+      <h1>Hermes — a job-application tracker API,<br>built like it has to run in production.</h1>
+      <p class="lede">
+        FastAPI + SQLAlchemy + SQLite underneath: JWT auth, per-user data isolation, Alembic migrations,
+        a pytest suite, CI on every push, and a live deployment you can poke at below or straight from Swagger.
+      </p>
+      <div class="cta-row">
+        <a class="btn primary" id="docs-link" href="#" target="_blank" rel="noopener">Open live API docs →</a>
+        <a class="btn ghost" href="https://github.com/YOUR_GITHUB_USERNAME/hermes" target="_blank" rel="noopener">View source on GitHub</a>
+      </div>
+      <div class="badges">
+        <span class="badge">Python 3.12</span>
+        <span class="badge">FastAPI</span>
+        <span class="badge">SQLAlchemy 2.0</span>
+        <span class="badge">Alembic</span>
+        <span class="badge">JWT auth</span>
+        <span class="badge">pytest</span>
+        <span class="badge">GitHub Actions CI</span>
+        <span class="badge">Docker</span>
+        <span class="badge">Render</span>
+      </div>
+    </div>
+  </header>
+
+  <section id="dashboard">
+    <div class="wrap">
+      <h2>Live dashboard</h2>
+      <p class="section-sub">
+        Pulled in real time from the deployed API's public, read-only <code>/demo/*</code> endpoints — no login required.
+        This is seeded sample data served from <code id="api-base-label">…</code>; the same host exposes the full, authenticated CRUD surface.
+      </p>
+
+      <div class="status-banner">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Loading…</span>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-value"><span id="stat-total">—</span></div>
+          <div class="stat-label">Applications tracked</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value"><span id="stat-response">—</span></div>
+          <div class="stat-label">Response rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value"><span id="stat-interview">—</span></div>
+          <div class="stat-label">Interview rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value"><span id="stat-offer">—</span></div>
+          <div class="stat-label">Offer rate</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Applications by status</h3>
+          <div class="status-bars" id="status-bars"></div>
+        </div>
+        <div class="panel">
+          <h3>Applications over time</h3>
+          <canvas id="timeline-chart" width="420" height="220"></canvas>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top: 20px;">
+        <h3>Recent applications</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Role</th><th>Company</th><th>Status</th><th>Source</th><th>Applied</th></tr>
+            </thead>
+            <tbody id="applications-body"></tbody>
+          </table>
+          <p class="empty-note" id="table-empty" hidden>No applications yet.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="try-it">
+    <div class="wrap">
+      <h2>Try the real API</h2>
+      <p class="section-sub">
+        The dashboard above only reads seeded demo data. The API itself is a full multi-tenant CRUD service —
+        register your own account and it behaves like any other job-tracker backend would.
+      </p>
+      <pre class="code-block"><span class="c1"># 1. register</span>
+curl -X POST $API/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "you@example.com", "password": "a-strong-password"}'
+
+<span class="c1"># 2. log in (OAuth2 password flow, form-encoded)</span>
+curl -X POST $API/auth/login \
+  -d "username=you@example.com&password=a-strong-password"
+
+<span class="c1"># 3. use the token</span>
+curl $API/applications \
+  -H "Authorization: Bearer &lt;token&gt;"</pre>
+      <p class="section-sub" style="margin-top: 16px;">
+        Or skip curl entirely and use the interactive <a id="docs-link-2" href="#" target="_blank" rel="noopener">Swagger UI</a> —
+        it has an "Authorize" button wired up to the same JWT flow.
+      </p>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <div class="wrap">
+      <h2>Design notes</h2>
+      <p class="section-sub">The parts of this that were actual decisions, not defaults.</p>
+      <ul class="arch-list">
+        <li>
+          <span class="k">Multi-tenancy</span>
+          <span class="v">Every company, application, and interview stage is scoped to <code>owner_id</code>; ownership is checked on every read and write, not just enforced at creation.</span>
+        </li>
+        <li>
+          <span class="k">Public demo layer</span>
+          <span class="v">The <code>/demo/*</code> routes are read-only and serve one fixed seeded account, kept separate from the authenticated CRUD API so the live dashboard has zero write access to real data.</span>
+        </li>
+        <li>
+          <span class="k">Rate limiting</span>
+          <span class="v">Login, registration, and the public demo endpoints are throttled per-IP with <code>slowapi</code> to blunt credential-stuffing and scraping.</span>
+        </li>
+        <li>
+          <span class="k">Migrations, not create_all</span>
+          <span class="v">Schema changes ship as Alembic revisions; the container runs <code>alembic upgrade head</code> on boot instead of trusting SQLAlchemy to reconcile the schema.</span>
+        </li>
+        <li>
+          <span class="k">Tests hit the real stack</span>
+          <span class="v">pytest spins up a throwaway SQLite file per test and drives the API through FastAPI's TestClient — no mocked ORM layer.</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap" style="display:flex; justify-content:space-between; width:100%; flex-wrap:wrap; gap:12px;">
+      <span>Hermes — a portfolio project. <a href="https://github.com/YOUR_GITHUB_USERNAME/hermes" target="_blank" rel="noopener">Source</a></span>
+      <span>Built by <a href="https://github.com/YOUR_GITHUB_USERNAME" target="_blank" rel="noopener">YOUR NAME</a></span>
+    </div>
+  </footer>
+
+  <script>
+    // fills in the two "open docs" links and the curl snippet's $API once app.js sets API_BASE_URL
+  </script>
+  <script src="app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("docs-link-2").href = `${API_BASE_URL}/docs`;
+      document.querySelectorAll("pre.code-block").forEach((el) => {
+        el.innerHTML = el.innerHTML.replaceAll("$API", API_BASE_URL);
+      });
+    });
+  </script>
+</body>
+</html>

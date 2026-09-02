@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: hermes-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
+      - key: CORS_ORIGINS
+        value: '["https://YOUR_GITHUB_USERNAME.github.io"]'
+      - key: DEMO_USER_EMAIL
+        value: demo@hermes.dev
+      - key: DEMO_USER_PASSWORD
+        generateValue: true

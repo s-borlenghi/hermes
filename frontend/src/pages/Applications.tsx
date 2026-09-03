@@ -17,6 +17,7 @@ import { isApiError } from '../auth/AuthContext'
 import type { Application, ApplicationStatus, Company } from '../api/types'
 import { APPLICATION_STATUSES, STATUS_LABELS } from '../api/types'
 import { ApplicationsTable } from '../components/ApplicationsTable'
+import { useNotify } from '../components/Notifications'
 
 interface FormState {
   role_title: string
@@ -37,14 +38,16 @@ const EMPTY_FORM: FormState = {
 }
 
 export function Applications() {
+  const notify = useNotify()
   const [searchParams, setSearchParams] = useSearchParams()
   const [applications, setApplications] = useState<Application[] | null>(null)
-  const [companies, setCompanies] = useState<Company[]>([])
+  const [companies, setCompanies] = useState<Company[] | null>(null)
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | ''>('')
   const [search, setSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(searchParams.get('new') === '1')
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   function reload() {
     applicationsApi
@@ -76,6 +79,7 @@ export function Applications() {
       setError('Pick a company.')
       return
     }
+    setIsSubmitting(true)
     try {
       await applicationsApi.create({
         role_title: form.role_title,
@@ -87,15 +91,23 @@ export function Applications() {
       })
       closeDialog()
       reload()
+      notify('Application created.')
     } catch (err) {
       setError(isApiError(err) ? err.message : 'Something went wrong.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   async function handleDelete(application: Application) {
     if (!confirm(`Delete the "${application.role_title}" application?`)) return
-    await applicationsApi.remove(application.id)
-    reload()
+    try {
+      await applicationsApi.remove(application.id)
+      reload()
+      notify('Application deleted.')
+    } catch (err) {
+      notify(isApiError(err) ? err.message : 'Could not delete this application.', 'error')
+    }
   }
 
   return (
@@ -138,7 +150,7 @@ export function Applications() {
         <form onSubmit={handleSubmit}>
           <DialogTitle>New application</DialogTitle>
           <DialogContent>
-            {companies.length === 0 ? (
+            {companies !== null && companies.length === 0 ? (
               <Typography color="text.secondary">
                 You need a company first.{' '}
                 <Link component={RouterLink} to="/app/companies">
@@ -162,7 +174,7 @@ export function Applications() {
                   value={form.company_id}
                   onChange={(e) => setForm({ ...form, company_id: e.target.value })}
                 >
-                  {companies.map((c) => (
+                  {companies?.map((c) => (
                     <MenuItem key={c.id} value={c.id}>
                       {c.name}
                     </MenuItem>
@@ -202,9 +214,9 @@ export function Applications() {
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={closeDialog}>Cancel</Button>
-            {companies.length > 0 && (
-              <Button type="submit" variant="contained">
-                Create application
+            {companies && companies.length > 0 && (
+              <Button type="submit" variant="contained" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating…' : 'Create application'}
               </Button>
             )}
           </DialogActions>

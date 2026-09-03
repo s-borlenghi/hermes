@@ -22,6 +22,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import { companiesApi } from '../api/client'
 import { isApiError } from '../auth/AuthContext'
 import type { Company } from '../api/types'
+import { useNotify } from '../components/Notifications'
 
 interface FormState {
   name: string
@@ -32,11 +33,13 @@ interface FormState {
 const EMPTY_FORM: FormState = { name: '', website: '', notes: '' }
 
 export function Companies() {
+  const notify = useNotify()
   const [companies, setCompanies] = useState<Company[] | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   function reload() {
     companiesApi.list().then(setCompanies)
@@ -61,24 +64,34 @@ export function Companies() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
+    setIsSubmitting(true)
     const payload = { name: form.name, website: form.website || null, notes: form.notes || null }
     try {
       if (editingId) {
         await companiesApi.update(editingId, payload)
+        notify('Company updated.')
       } else {
         await companiesApi.create(payload)
+        notify('Company created.')
       }
       setDialogOpen(false)
       reload()
     } catch (err) {
       setError(isApiError(err) ? err.message : 'Something went wrong.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   async function handleDelete(company: Company) {
     if (!confirm(`Delete "${company.name}"? This also deletes its applications.`)) return
-    await companiesApi.remove(company.id)
-    reload()
+    try {
+      await companiesApi.remove(company.id)
+      reload()
+      notify('Company deleted.')
+    } catch (err) {
+      notify(isApiError(err) ? err.message : 'Could not delete this company.', 'error')
+    }
   }
 
   return (
@@ -167,8 +180,8 @@ export function Companies() {
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="contained">
-              {editingId ? 'Save changes' : 'Create company'}
+            <Button type="submit" variant="contained" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving…' : editingId ? 'Save changes' : 'Create company'}
             </Button>
           </DialogActions>
         </form>

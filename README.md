@@ -1,5 +1,9 @@
 # Hermes
 
+[![Backend CI](https://github.com/s-borlenghi/hermes/actions/workflows/ci.yml/badge.svg)](https://github.com/s-borlenghi/hermes/actions/workflows/ci.yml)
+[![Deploy Frontend](https://github.com/s-borlenghi/hermes/actions/workflows/deploy-frontend.yml/badge.svg)](https://github.com/s-borlenghi/hermes/actions/workflows/deploy-frontend.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A job-application tracker: FastAPI backend, React frontend, both deployed and actually running rather than just sitting in this repo.
 
 **[Live app](https://s-borlenghi.github.io/hermes/)** · **[API docs](https://hermes-api-ypyk.onrender.com/docs)**
@@ -109,3 +113,9 @@ Schema changes go through Alembic instead of `Base.metadata.create_all`. That's 
 Login, registration, and the demo endpoints are the only parts of the API that don't require a token, so they're the ones rate-limited with `slowapi` — mostly to make casual credential stuffing and scraping a little more expensive.
 
 The frontend uses `HashRouter` instead of `BrowserRouter`. GitHub Pages doesn't do server-side rewrites, so a deep link like `/hermes/app/applications/3` under a normal router would 404 on refresh. With hash routing everything after the `#` is handled entirely client-side, so there's nothing for the server to get wrong.
+
+SQLite doesn't actually support timezone-aware storage, so a plain `DateTime(timezone=True)` column silently comes back naive on that dialect. A custom `UTCDateTime` type in `database.py` strips the timezone before writing and reattaches UTC on the way out, so every timestamp the API returns is unambiguous — this is what stopped interview-stage dates from occasionally rendering a day off depending on the visitor's timezone.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

@@ -8,12 +8,8 @@ import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
 import { Link as RouterLink } from 'react-router-dom'
 import type { Application } from '../api/types'
+import { formatCalendarDate } from '../utils/dates'
 import { StatusPill } from './StatusPill'
-
-function formatDate(value: string | null): string {
-  if (!value) return '—'
-  return new Date(value).toLocaleDateString()
-}
 
 export function ApplicationsTable({
   applications,
@@ -62,7 +58,7 @@ export function ApplicationsTable({
                 <StatusPill status={app.status} />
               </TableCell>
               <TableCell>{app.source ?? '—'}</TableCell>
-              <TableCell>{formatDate(app.applied_date)}</TableCell>
+              <TableCell>{formatCalendarDate(app.applied_date)}</TableCell>
               {onDelete && (
                 <TableCell align="right">
                   <Link component="button" underline="hover" color="error" onClick={() => onDelete(app)}>

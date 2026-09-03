@@ -4,7 +4,7 @@ Run with: python -m app.seed
 Safe to re-run: it wipes and recreates only the demo user's own data.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from app.config import get_settings
 from app.database import Base, SessionLocal, engine
@@ -101,7 +101,7 @@ def seed() -> None:
         for company in companies_by_name.values():
             db.refresh(company)
 
-        now = datetime.now()
+        now = datetime.now(UTC)
         for data in SAMPLE_APPLICATIONS:
             applied_date = now - timedelta(days=data["days_ago"])
             application = Application(

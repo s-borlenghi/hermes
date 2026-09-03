@@ -1,5 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
+import { NotificationsProvider } from './components/Notifications'
 import { WakeUpGate } from './components/WakeUpGate'
 import { AuthProvider } from './auth/AuthContext'
 import { RequireAuth } from './auth/RequireAuth'
@@ -16,25 +17,27 @@ export default function App() {
   return (
     <WakeUpGate>
       <HashRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/demo" element={<Demo />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+        <NotificationsProvider>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/demo" element={<Demo />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            <Route path="/app" element={<RequireAuth />}>
-              <Route element={<AppShell />}>
-                <Route index element={<Dashboard />} />
-                <Route path="applications" element={<Applications />} />
-                <Route path="applications/:id" element={<ApplicationDetail />} />
-                <Route path="companies" element={<Companies />} />
+              <Route path="/app" element={<RequireAuth />}>
+                <Route element={<AppShell />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="applications" element={<Applications />} />
+                  <Route path="applications/:id" element={<ApplicationDetail />} />
+                  <Route path="companies" element={<Companies />} />
+                </Route>
               </Route>
-            </Route>
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </AuthProvider>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </AuthProvider>
+        </NotificationsProvider>
       </HashRouter>
     </WakeUpGate>
   )

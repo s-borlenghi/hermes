@@ -19,7 +19,9 @@ import { applicationsApi } from '../api/client'
 import { isApiError } from '../auth/AuthContext'
 import type { Application, ApplicationStatus } from '../api/types'
 import { APPLICATION_STATUSES, STATUS_LABELS } from '../api/types'
+import { useNotify } from '../components/Notifications'
 import { StatusPill } from '../components/StatusPill'
+import { formatCalendarDate } from '../utils/dates'
 
 interface StageFormState {
   stage_name: string
@@ -33,13 +35,16 @@ export function ApplicationDetail() {
   const { id } = useParams<{ id: string }>()
   const applicationId = Number(id)
   const navigate = useNavigate()
+  const notify = useNotify()
 
   const [application, setApplication] = useState<Application | null>(null)
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState<ApplicationStatus>('wishlist')
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
   const [stageForm, setStageForm] = useState<StageFormState>(EMPTY_STAGE)
   const [stageError, setStageError] = useState<string | null>(null)
+  const [isAddingStage, setIsAddingStage] = useState(false)
 
   function reload() {
     applicationsApi.get(applicationId).then((app) => {
@@ -54,19 +59,28 @@ export function ApplicationDetail() {
   async function handleSave(event: FormEvent) {
     event.preventDefault()
     setSaveError(null)
+    setIsSaving(true)
     try {
       await applicationsApi.update(applicationId, { notes: notes || null, status })
       reload()
+      notify('Changes saved.')
     } catch (err) {
       setSaveError(isApiError(err) ? err.message : 'Could not save changes.')
+    } finally {
+      setIsSaving(false)
     }
   }
 
   async function handleDelete() {
     if (!application) return
     if (!confirm(`Delete the "${application.role_title}" application?`)) return
-    await applicationsApi.remove(applicationId)
-    navigate('/app/applications')
+    try {
+      await applicationsApi.remove(applicationId)
+      navigate('/app/applications')
+      notify('Application deleted.')
+    } catch (err) {
+      notify(isApiError(err) ? err.message : 'Could not delete this application.', 'error')
+    }
   }
 
   async function handleAddStage(event: FormEvent) {
@@ -76,6 +90,7 @@ export function ApplicationDetail() {
       setStageError('Give the stage a name.')
       return
     }
+    setIsAddingStage(true)
     try {
       await applicationsApi.addStage(applicationId, {
         stage_name: stageForm.stage_name,
@@ -85,14 +100,22 @@ export function ApplicationDetail() {
       })
       setStageForm(EMPTY_STAGE)
       reload()
+      notify('Stage added.')
     } catch (err) {
       setStageError(isApiError(err) ? err.message : 'Could not add stage.')
+    } finally {
+      setIsAddingStage(false)
     }
   }
 
   async function handleDeleteStage(stageId: number) {
-    await applicationsApi.removeStage(applicationId, stageId)
-    reload()
+    try {
+      await applicationsApi.removeStage(applicationId, stageId)
+      reload()
+      notify('Stage removed.')
+    } catch (err) {
+      notify(isApiError(err) ? err.message : 'Could not remove this stage.', 'error')
+    }
   }
 
   if (!application) return null
@@ -138,8 +161,8 @@ export function ApplicationDetail() {
               </TextField>
               <TextField label="Notes" multiline minRows={5} value={notes} onChange={(e) => setNotes(e.target.value)} />
               {saveError && <Alert severity="error">{saveError}</Alert>}
-              <Button type="submit" variant="contained" sx={{ alignSelf: 'flex-start' }}>
-                Save changes
+              <Button type="submit" variant="contained" disabled={isSaving} sx={{ alignSelf: 'flex-start' }}>
+                {isSaving ? 'Saving…' : 'Save changes'}
               </Button>
 
               {(application.location || application.source || application.job_url) && (
@@ -203,7 +226,7 @@ export function ApplicationDetail() {
                     </Typography>
                     {stage.scheduled_at && (
                       <Typography variant="body2" color="text.secondary">
-                        {new Date(stage.scheduled_at).toLocaleDateString()}
+                        {formatCalendarDate(stage.scheduled_at)}
                       </Typography>
                     )}
                     {stage.completed && <StatusPill status="accepted" />}
@@ -250,8 +273,8 @@ export function ApplicationDetail() {
                 }
                 label="Completed"
               />
-              <Button type="submit" variant="outlined" size="small">
-                Add stage
+              <Button type="submit" variant="outlined" size="small" disabled={isAddingStage}>
+                {isAddingStage ? 'Adding…' : 'Add stage'}
               </Button>
             </Stack>
             {stageError && (

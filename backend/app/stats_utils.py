@@ -1,6 +1,6 @@
 from collections import Counter
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import UTC, datetime
 
 from app.models import Application, ApplicationStatus
 from app.schemas import StatsSummary, StatusCount, TimelinePoint
@@ -39,7 +39,7 @@ def build_summary(applications: Sequence[Application]) -> StatsSummary:
 
 
 def build_timeline(applications: Sequence[Application], months: int) -> list[TimelinePoint]:
-    now = datetime.now()
+    now = datetime.now(UTC)
     buckets: dict[str, int] = {}
     order: list[str] = []
     for i in range(months - 1, -1, -1):

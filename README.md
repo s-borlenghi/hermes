@@ -6,7 +6,7 @@ A job-application tracker: FastAPI backend, React frontend, both deployed and ac
 
 Backend is FastAPI + SQLAlchemy + SQLite on Render. Frontend is React, TypeScript and MUI on GitHub Pages, talking to the same API.
 
-The API is on Render's free tier, which spins down after 15 minutes of inactivity. The first request after that can take up to a minute to come back — the frontend shows a "waking up" screen instead of a blank spinner while it waits, but if you're hitting the API directly (curl, Swagger) just know the first call might be slow.
+The API is on Render's free tier, which spins down after 15 minutes of inactivity. The first request after that can take anywhere from a few seconds to a couple of minutes to come back — the frontend shows a "waking up" screen instead of a blank spinner while it waits, but if you're hitting the API directly (curl, Swagger) just know the first call might be slow.
 
 ## What it does
 

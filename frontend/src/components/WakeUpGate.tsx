@@ -8,7 +8,7 @@ import Typography from '@mui/material/Typography'
 import { checkHealth } from '../api/client'
 
 const RETRY_INTERVAL_MS = 4000
-const GIVE_UP_AFTER_MS = 90_000
+const GIVE_UP_AFTER_MS = 150_000
 
 type GateStatus = 'checking' | 'ready' | 'stuck'
 
@@ -17,7 +17,7 @@ function elapsedMessage(elapsedMs: number): string {
   if (elapsedMs < 25000) {
     return "Waking up the live server — it's hosted on a free tier that sleeps when idle."
   }
-  return 'Still waking up… this can take up to a minute on the very first request.'
+  return "Still waking up… free hosting can occasionally take a couple of minutes on the first request."
 }
 
 export function WakeUpGate({ children }: { children: ReactNode }) {

@@ -130,9 +130,8 @@ curl -X POST ${API_BASE_URL}/auth/login \\
               It's on a free tier, and it shows
             </Typography>
             <Typography color="text.secondary">
-              The API sleeps after 15 minutes of inactivity on Render's free plan. If you loaded this in the last
-              minute or so, you probably saw a "waking up the server" screen before this page appeared — that's
-              expected, not a bug.
+              The API sleeps after 15 minutes of inactivity on Render's free plan. If you loaded this recently, you
+              probably saw a "waking up the server" screen before this page appeared — that's expected, not a bug.
             </Typography>
           </Box>
         </Stack>

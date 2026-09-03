@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
 import { checkHealth } from '../api/client'
 
 const RETRY_INTERVAL_MS = 4000
@@ -27,11 +32,9 @@ export function WakeUpGate({ children }: { children: ReactNode }) {
     let cancelled = false
     startedAtRef.current = Date.now()
 
-    const tick = () => {
-      if (cancelled) return
-      setElapsedMs(Date.now() - startedAtRef.current)
-    }
-    const ticker = window.setInterval(tick, 500)
+    const ticker = window.setInterval(() => {
+      if (!cancelled) setElapsedMs(Date.now() - startedAtRef.current)
+    }, 500)
 
     async function poll() {
       while (!cancelled) {
@@ -61,26 +64,37 @@ export function WakeUpGate({ children }: { children: ReactNode }) {
   if (status === 'ready') return <>{children}</>
 
   return (
-    <div className="wake-gate">
-      <div className="wake-gate-card">
-        <div className={`wake-spinner ${status === 'stuck' ? 'stuck' : ''}`} aria-hidden="true" />
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        px: 3,
+      }}
+    >
+      <Stack spacing={2} sx={{ alignItems: 'center', maxWidth: 420, textAlign: 'center' }}>
+        <CircularProgress color={status === 'stuck' ? 'error' : 'primary'} size={40} />
         {status === 'checking' ? (
           <>
-            <p className="wake-title">Starting Hermes…</p>
-            <p className="wake-message">{elapsedMessage(elapsedMs)}</p>
-            <p className="wake-meta">
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              Starting Hermes…
+            </Typography>
+            <Typography color="text.secondary">{elapsedMessage(elapsedMs)}</Typography>
+            <Typography variant="caption" color="text.secondary">
               {Math.floor(elapsedMs / 1000)}s elapsed · attempt {attempt + 1}
-            </p>
+            </Typography>
           </>
         ) : (
           <>
-            <p className="wake-title">The API isn't responding</p>
-            <p className="wake-message">
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              The API isn't responding
+            </Typography>
+            <Typography color="text.secondary">
               It might be down rather than just asleep. You can try again, or check back in a bit.
-            </p>
-            <button
-              type="button"
-              className="btn primary"
+            </Typography>
+            <Button
+              variant="contained"
               onClick={() => {
                 setElapsedMs(0)
                 setAttempt(0)
@@ -88,10 +102,10 @@ export function WakeUpGate({ children }: { children: ReactNode }) {
               }}
             >
               Retry now
-            </button>
+            </Button>
           </>
         )}
-      </div>
-    </div>
+      </Stack>
+    </Box>
   )
 }

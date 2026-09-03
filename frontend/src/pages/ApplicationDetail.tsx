@@ -1,10 +1,25 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
+import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Checkbox from '@mui/material/Checkbox'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import Grid from '@mui/material/Grid'
+import IconButton from '@mui/material/IconButton'
+import Link from '@mui/material/Link'
+import MenuItem from '@mui/material/MenuItem'
+import Paper from '@mui/material/Paper'
+import Stack from '@mui/material/Stack'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
 import { applicationsApi } from '../api/client'
 import { isApiError } from '../auth/AuthContext'
 import type { Application, ApplicationStatus } from '../api/types'
 import { APPLICATION_STATUSES, STATUS_LABELS } from '../api/types'
+import { StatusPill } from '../components/StatusPill'
 
 interface StageFormState {
   stage_name: string
@@ -83,114 +98,170 @@ export function ApplicationDetail() {
   if (!application) return null
 
   return (
-    <div>
-      <p>
-        <Link to="/app/applications">← Back to applications</Link>
-      </p>
-      <div className="page-header">
-        <h1>
-          {application.role_title} <span className="text-dim">@ {application.company.name}</span>
-        </h1>
-        <button type="button" className="link-btn danger" onClick={handleDelete}>
+    <Stack spacing={2}>
+      <Link component={RouterLink} to="/app/applications">
+        ← Back to applications
+      </Link>
+      <Stack
+        direction="row"
+        sx={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}
+      >
+        <Typography variant="h4">
+          {application.role_title}{' '}
+          <Typography component="span" color="text.secondary" variant="h5">
+            @ {application.company.name}
+          </Typography>
+        </Typography>
+        <Button color="error" startIcon={<DeleteOutlineIcon />} onClick={handleDelete}>
           Delete application
-        </button>
-      </div>
+        </Button>
+      </Stack>
 
-      <div className="grid-2">
-        <form className="panel form-panel" onSubmit={handleSave}>
-          <h3>Details</h3>
-          <label>
-            Status
-            <select value={status} onChange={(e) => setStatus(e.target.value as ApplicationStatus)}>
-              {APPLICATION_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {STATUS_LABELS[s]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Notes
-            <textarea rows={6} value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </label>
-          {saveError && <p className="form-error">{saveError}</p>}
-          <div className="form-actions">
-            <button type="submit" className="btn primary">
-              Save changes
-            </button>
-          </div>
-          <dl className="detail-meta">
-            {application.location && (
-              <>
-                <dt>Location</dt>
-                <dd>{application.location}</dd>
-              </>
-            )}
-            {application.source && (
-              <>
-                <dt>Source</dt>
-                <dd>{application.source}</dd>
-              </>
-            )}
-            {application.job_url && (
-              <>
-                <dt>Job posting</dt>
-                <dd>
-                  <a href={application.job_url} target="_blank" rel="noopener noreferrer">
-                    {application.job_url}
-                  </a>
-                </dd>
-              </>
-            )}
-          </dl>
-        </form>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper variant="outlined" component="form" onSubmit={handleSave} sx={{ p: 2.5, height: '100%' }}>
+            <Typography variant="overline" color="text.secondary">
+              Details
+            </Typography>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField
+                select
+                label="Status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as ApplicationStatus)}
+              >
+                {APPLICATION_STATUSES.map((s) => (
+                  <MenuItem key={s} value={s}>
+                    {STATUS_LABELS[s]}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField label="Notes" multiline minRows={5} value={notes} onChange={(e) => setNotes(e.target.value)} />
+              {saveError && <Alert severity="error">{saveError}</Alert>}
+              <Button type="submit" variant="contained" sx={{ alignSelf: 'flex-start' }}>
+                Save changes
+              </Button>
 
-        <div className="panel">
-          <h3>Interview stages</h3>
-          <ul className="stage-list">
-            {application.stages.map((stage) => (
-              <li key={stage.id} className={stage.completed ? 'completed' : ''}>
-                <div>
-                  <strong>{stage.stage_name}</strong>
-                  {stage.scheduled_at && (
-                    <span className="text-dim"> · {new Date(stage.scheduled_at).toLocaleDateString()}</span>
+              {(application.location || application.source || application.job_url) && (
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 16px', fontSize: '0.85rem' }}>
+                  {application.location && (
+                    <>
+                      <Typography variant="body2" color="text.secondary">
+                        Location
+                      </Typography>
+                      <Typography variant="body2">{application.location}</Typography>
+                    </>
                   )}
-                  {stage.completed && <span className="pill accepted">Done</span>}
-                </div>
-                <button type="button" className="link-btn danger" onClick={() => handleDeleteStage(stage.id)}>
-                  Remove
-                </button>
-              </li>
-            ))}
-            {application.stages.length === 0 && <p className="empty-note">No interview stages yet.</p>}
-          </ul>
+                  {application.source && (
+                    <>
+                      <Typography variant="body2" color="text.secondary">
+                        Source
+                      </Typography>
+                      <Typography variant="body2">{application.source}</Typography>
+                    </>
+                  )}
+                  {application.job_url && (
+                    <>
+                      <Typography variant="body2" color="text.secondary">
+                        Job posting
+                      </Typography>
+                      <Link href={application.job_url} target="_blank" rel="noopener noreferrer" variant="body2">
+                        {application.job_url}
+                      </Link>
+                    </>
+                  )}
+                </Box>
+              )}
+            </Stack>
+          </Paper>
+        </Grid>
 
-          <form className="stage-form" onSubmit={handleAddStage}>
-            <input
-              placeholder="Stage name (e.g. Technical interview)"
-              value={stageForm.stage_name}
-              onChange={(e) => setStageForm({ ...stageForm, stage_name: e.target.value })}
-            />
-            <input
-              type="date"
-              value={stageForm.scheduled_at}
-              onChange={(e) => setStageForm({ ...stageForm, scheduled_at: e.target.value })}
-            />
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={stageForm.completed}
-                onChange={(e) => setStageForm({ ...stageForm, completed: e.target.checked })}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper variant="outlined" sx={{ p: 2.5, height: '100%' }}>
+            <Typography variant="overline" color="text.secondary">
+              Interview stages
+            </Typography>
+            <Stack spacing={1} sx={{ my: 1.5 }}>
+              {application.stages.map((stage) => (
+                <Stack
+                  key={stage.id}
+                  direction="row"
+                  sx={{
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    py: 1,
+                    borderBottom: 1,
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                    <Typography
+                      sx={{ fontWeight: 600 }}
+                      color={stage.completed ? 'text.secondary' : 'text.primary'}
+                    >
+                      {stage.stage_name}
+                    </Typography>
+                    {stage.scheduled_at && (
+                      <Typography variant="body2" color="text.secondary">
+                        {new Date(stage.scheduled_at).toLocaleDateString()}
+                      </Typography>
+                    )}
+                    {stage.completed && <StatusPill status="accepted" />}
+                  </Stack>
+                  <IconButton size="small" color="error" onClick={() => handleDeleteStage(stage.id)}>
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Stack>
+              ))}
+              {application.stages.length === 0 && (
+                <Typography color="text.secondary" variant="body2">
+                  No interview stages yet.
+                </Typography>
+              )}
+            </Stack>
+
+            <Stack
+              component="form"
+              onSubmit={handleAddStage}
+              direction="row"
+              spacing={1}
+              sx={{ flexWrap: 'wrap', alignItems: 'center' }}
+            >
+              <TextField
+                size="small"
+                placeholder="Stage name (e.g. Technical interview)"
+                value={stageForm.stage_name}
+                onChange={(e) => setStageForm({ ...stageForm, stage_name: e.target.value })}
+                sx={{ flex: 1, minWidth: 180 }}
               />
-              Completed
-            </label>
-            <button type="submit" className="btn ghost small">
-              Add stage
-            </button>
-          </form>
-          {stageError && <p className="form-error">{stageError}</p>}
-        </div>
-      </div>
-    </div>
+              <TextField
+                size="small"
+                type="date"
+                value={stageForm.scheduled_at}
+                onChange={(e) => setStageForm({ ...stageForm, scheduled_at: e.target.value })}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={stageForm.completed}
+                    onChange={(e) => setStageForm({ ...stageForm, completed: e.target.checked })}
+                  />
+                }
+                label="Completed"
+              />
+              <Button type="submit" variant="outlined" size="small">
+                Add stage
+              </Button>
+            </Stack>
+            {stageError && (
+              <Alert severity="error" sx={{ mt: 1 }}>
+                {stageError}
+              </Alert>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+    </Stack>
   )
 }

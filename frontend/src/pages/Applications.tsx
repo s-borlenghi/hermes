@@ -1,6 +1,17 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link as RouterLink, useSearchParams } from 'react-router-dom'
+import Alert from '@mui/material/Alert'
+import Button from '@mui/material/Button'
+import Dialog from '@mui/material/Dialog'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
+import DialogTitle from '@mui/material/DialogTitle'
+import Link from '@mui/material/Link'
+import MenuItem from '@mui/material/MenuItem'
+import Stack from '@mui/material/Stack'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
 import { applicationsApi, companiesApi } from '../api/client'
 import { isApiError } from '../auth/AuthContext'
 import type { Application, ApplicationStatus, Company } from '../api/types'
@@ -31,14 +42,14 @@ export function Applications() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | ''>('')
   const [search, setSearch] = useState('')
-  const [showForm, setShowForm] = useState(searchParams.get('new') === '1')
+  const [dialogOpen, setDialogOpen] = useState(searchParams.get('new') === '1')
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [error, setError] = useState<string | null>(null)
 
   function reload() {
-    applicationsApi.list({ status: statusFilter || undefined, q: search || undefined, limit: 100 }).then((res) =>
-      setApplications(res.items),
-    )
+    applicationsApi
+      .list({ status: statusFilter || undefined, q: search || undefined, limit: 100 })
+      .then((res) => setApplications(res.items))
   }
 
   useEffect(() => {
@@ -47,14 +58,14 @@ export function Applications() {
 
   useEffect(reload, [statusFilter, search])
 
-  function openForm() {
+  function openDialog() {
     setForm(EMPTY_FORM)
     setError(null)
-    setShowForm(true)
+    setDialogOpen(true)
   }
 
-  function closeForm() {
-    setShowForm(false)
+  function closeDialog() {
+    setDialogOpen(false)
     if (searchParams.get('new')) setSearchParams({})
   }
 
@@ -74,7 +85,7 @@ export function Applications() {
         job_url: form.job_url || null,
         status: form.status,
       })
-      closeForm()
+      closeDialog()
       reload()
     } catch (err) {
       setError(isApiError(err) ? err.message : 'Something went wrong.')
@@ -88,108 +99,117 @@ export function Applications() {
   }
 
   return (
-    <div>
-      <div className="page-header">
-        <h1>Applications</h1>
-        <button type="button" className="btn primary" onClick={openForm}>
+    <Stack spacing={3}>
+      <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h4">Applications</Typography>
+        <Button variant="contained" onClick={openDialog}>
           New application
-        </button>
-      </div>
+        </Button>
+      </Stack>
 
-      <div className="filter-row">
-        <input
-          type="search"
+      <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap' }}>
+        <TextField
+          size="small"
           placeholder="Search role or notes…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          sx={{ minWidth: 220, flex: 1 }}
         />
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as ApplicationStatus | '')}>
-          <option value="">All statuses</option>
+        <TextField
+          size="small"
+          select
+          label="Status"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as ApplicationStatus | '')}
+          sx={{ minWidth: 160 }}
+        >
+          <MenuItem value="">All statuses</MenuItem>
           {APPLICATION_STATUSES.map((status) => (
-            <option key={status} value={status}>
+            <MenuItem key={status} value={status}>
               {STATUS_LABELS[status]}
-            </option>
+            </MenuItem>
           ))}
-        </select>
-      </div>
+        </TextField>
+      </Stack>
 
-      {showForm && (
-        <form className="panel form-panel" onSubmit={handleSubmit}>
-          {companies.length === 0 ? (
-            <p className="empty-note">
-              You need a company first. <Link to="/app/companies">Add one</Link>, then come back.
-            </p>
-          ) : (
-            <>
-              <label>
-                Role title
-                <input
+      {applications && <ApplicationsTable applications={applications} onDelete={handleDelete} linkToDetail />}
+
+      <Dialog open={dialogOpen} onClose={closeDialog} fullWidth maxWidth="xs">
+        <form onSubmit={handleSubmit}>
+          <DialogTitle>New application</DialogTitle>
+          <DialogContent>
+            {companies.length === 0 ? (
+              <Typography color="text.secondary">
+                You need a company first.{' '}
+                <Link component={RouterLink} to="/app/companies">
+                  Add one
+                </Link>
+                , then come back.
+              </Typography>
+            ) : (
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                <TextField
+                  label="Role title"
                   required
+                  autoFocus
                   value={form.role_title}
                   onChange={(e) => setForm({ ...form, role_title: e.target.value })}
                 />
-              </label>
-              <label>
-                Company
-                <select
+                <TextField
+                  select
+                  label="Company"
                   required
                   value={form.company_id}
                   onChange={(e) => setForm({ ...form, company_id: e.target.value })}
                 >
-                  <option value="">Select a company…</option>
                   {companies.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <MenuItem key={c.id} value={c.id}>
                       {c.name}
-                    </option>
+                    </MenuItem>
                   ))}
-                </select>
-              </label>
-              <label>
-                Status
-                <select
+                </TextField>
+                <TextField
+                  select
+                  label="Status"
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value as ApplicationStatus })}
                 >
                   {APPLICATION_STATUSES.map((status) => (
-                    <option key={status} value={status}>
+                    <MenuItem key={status} value={status}>
                       {STATUS_LABELS[status]}
-                    </option>
+                    </MenuItem>
                   ))}
-                </select>
-              </label>
-              <label>
-                Location
-                <input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
-              </label>
-              <label>
-                Source
-                <input
+                </TextField>
+                <TextField
+                  label="Location"
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                />
+                <TextField
+                  label="Source"
                   placeholder="LinkedIn, referral, company site…"
                   value={form.source}
                   onChange={(e) => setForm({ ...form, source: e.target.value })}
                 />
-              </label>
-              <label>
-                Job URL
-                <input value={form.job_url} onChange={(e) => setForm({ ...form, job_url: e.target.value })} />
-              </label>
-            </>
-          )}
-          {error && <p className="form-error">{error}</p>}
-          <div className="form-actions">
-            {companies.length > 0 && (
-              <button type="submit" className="btn primary">
-                Create application
-              </button>
+                <TextField
+                  label="Job URL"
+                  value={form.job_url}
+                  onChange={(e) => setForm({ ...form, job_url: e.target.value })}
+                />
+                {error && <Alert severity="error">{error}</Alert>}
+              </Stack>
             )}
-            <button type="button" className="btn ghost" onClick={closeForm}>
-              Cancel
-            </button>
-          </div>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={closeDialog}>Cancel</Button>
+            {companies.length > 0 && (
+              <Button type="submit" variant="contained">
+                Create application
+              </Button>
+            )}
+          </DialogActions>
         </form>
-      )}
-
-      {applications && <ApplicationsTable applications={applications} onDelete={handleDelete} linkToDetail />}
-    </div>
+      </Dialog>
+    </Stack>
   )
 }

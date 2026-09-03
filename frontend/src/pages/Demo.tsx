@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link as RouterLink } from 'react-router-dom'
+import Alert from '@mui/material/Alert'
+import Chip from '@mui/material/Chip'
+import Container from '@mui/material/Container'
+import Grid from '@mui/material/Grid'
+import Link from '@mui/material/Link'
+import Paper from '@mui/material/Paper'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
 import { demoApi } from '../api/client'
 import type { Application, StatsSummary, StatsTimeline } from '../api/types'
 import { ApplicationsTable } from '../components/ApplicationsTable'
@@ -29,42 +37,50 @@ export function Demo() {
   }, [])
 
   return (
-    <div className="landing">
-      <header className="hero hero-compact">
-        <div className="wrap">
-          <div className="eyebrow">
-            <span className="dot" /> Public read-only demo
-          </div>
-          <h1>Live demo dashboard</h1>
-          <p className="lede">
-            Seeded sample data served from the deployed API's public <code>/demo/*</code> endpoints — no login,
-            no write access. <Link to="/register">Create an account</Link> to use the real, authenticated app.
-          </p>
-        </div>
-      </header>
+    <Container maxWidth="lg" sx={{ py: 6 }}>
+      <Stack spacing={1} sx={{ mb: 4 }}>
+        <Chip label="Public read-only demo" size="small" color="primary" variant="outlined" sx={{ alignSelf: 'flex-start' }} />
+        <Typography variant="h3">Live demo dashboard</Typography>
+        <Typography color="text.secondary" sx={{ maxWidth: 640 }}>
+          Seeded sample data served from the deployed API's public <code>/demo/*</code> endpoints — no login, no
+          write access. <Link component={RouterLink} to="/register">Create an account</Link> to use the real,
+          authenticated app.
+        </Typography>
+      </Stack>
 
-      <section>
-        <div className="wrap">
-          {error && <p className="form-error">{error}</p>}
-          {summary && <StatTiles summary={summary} />}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
-          <div className="grid-2">
-            <div className="panel">
-              <h3>Applications by status</h3>
-              {summary && <StatusBars summary={summary} />}
-            </div>
-            <div className="panel">
-              <h3>Applications over time</h3>
-              {timeline && <TimelineChart timeline={timeline} />}
-            </div>
-          </div>
+      {summary && <StatTiles summary={summary} />}
 
-          <div className="panel" style={{ marginTop: 20 }}>
-            <h3>Applications</h3>
-            {applications && <ApplicationsTable applications={applications} />}
-          </div>
-        </div>
-      </section>
-    </div>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, md: 7 }}>
+          <Paper variant="outlined" sx={{ p: 2.5, height: '100%' }}>
+            <Typography variant="overline" color="text.secondary">
+              Applications by status
+            </Typography>
+            {summary && <StatusBars summary={summary} />}
+          </Paper>
+        </Grid>
+        <Grid size={{ xs: 12, md: 5 }}>
+          <Paper variant="outlined" sx={{ p: 2.5, height: '100%' }}>
+            <Typography variant="overline" color="text.secondary">
+              Applications over time
+            </Typography>
+            {timeline && <TimelineChart timeline={timeline} />}
+          </Paper>
+        </Grid>
+      </Grid>
+
+      <Paper variant="outlined" sx={{ p: 2.5 }}>
+        <Typography variant="overline" color="text.secondary">
+          Applications
+        </Typography>
+        {applications && <ApplicationsTable applications={applications} />}
+      </Paper>
+    </Container>
   )
 }
